@@ -9,10 +9,6 @@ export async function fetchNews(params) {
       throw new Error("Something went wrong!");
     }
 
-    if (data?.data?.articles === 0) {
-      throw new Error("No News Found!");
-    }
-
     return data.data;
   } catch (error) {
     throw error;

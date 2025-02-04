@@ -3,6 +3,7 @@ import SearchInput from "./components/SearchInput";
 import TableData from "./components/TableData";
 import { tableColumn } from "./constants";
 import { fetchNews } from "./services";
+import toast, { Toaster } from "react-hot-toast";
 
 function App() {
   const [tableData, setTableData] = useState({
@@ -10,30 +11,51 @@ function App() {
     total: 0,
   });
   const [isSearching, setIsSearching] = useState(false);
+  const [isTableLoading, setIsTableLoading] = useState(false);
   const [params, setParams] = useState({
     page: 1,
     pageSize: 10,
     search: "",
   });
 
-  async function handleSearchNews() {
+  async function handleSearchNews(isFromSearch = false) {
     try {
-      setIsSearching(true);
+      if (isFromSearch) {
+        setIsSearching(true);
+      } else {
+        setIsTableLoading(true);
+      }
       const { articles, total } = await fetchNews(params);
+
+      if (total === 0 || articles.legth === 0) {
+        toast.error("No News Found!");
+      }
+
       setTableData({ articles, total });
     } catch (error) {
-      console.log("Something went wrong! Please try again");
+      toast.error(error?.message || "Something went wrong! Please try again");
     } finally {
-      setIsSearching(false);
+      if (isFromSearch) {
+        setIsSearching(false);
+      } else {
+        setIsTableLoading(false);
+      }
     }
   }
 
   useEffect(() => {
-    handleSearchNews();
-  }, [params]);
+    if (params?.search !== "") {
+      handleSearchNews(true);
+    }
+  }, [params.search]);
+
+  useEffect(() => {
+    handleSearchNews(false);
+  }, [params.page, params.pageSize]);
 
   return (
     <div className="container mx-auto py-10">
+      <Toaster />
       <div className="p-4">
         {/* search input  */}
         <SearchInput
@@ -57,7 +79,7 @@ function App() {
           config={{
             columns: tableColumn,
             data: tableData.articles,
-            loading: isSearching,
+            loading: isTableLoading,
             onChange: (pagination) => {
               setParams((prev) => ({
                 ...prev,
